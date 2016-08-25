@@ -13,31 +13,45 @@ const (
 	lineBreak      = '\n'
 )
 
-func GetValue(data []byte, key []byte) string {
-	index := bytes.IndexByte(data, bEqual)
-	if index < 1 {
-		return ""
+func GetString(data []byte, key []byte, valid func(string) bool) string {
+	key = bytes.ToLower(bytes.TrimSpace(key))
+	lines := bytes.Split(data, []byte{lineBreak})
+
+	for i := range lines {
+		if len(lines[i]) < 2 {
+			continue
+		}
+
+		index := bytes.IndexByte(lines[i], bEqual)
+		if index < 1 {
+			continue
+		}
+
+		_key := bytes.TrimSpace(lines[i][:index])
+		if len(_key) == 0 || _key[0] == bNumComment {
+			continue
+		}
+
+		if !bytes.Equal(bytes.ToLower(_key), key) {
+			continue
+		}
+
+		right := bytes.IndexByte(lines[i][index:], bNumComment)
+		if right == -1 {
+			lines[i] = lines[i][index+1:]
+		} else if right > 1 {
+			lines[i] = lines[i][index+1 : index+right]
+		} else {
+			continue
+		}
+
+		if s := string(bytes.TrimSpace(lines[i])); valid(s) {
+
+			return s
+		}
 	}
 
-	_key := bytes.TrimSpace(data[:index])
-	if len(_key) == 0 || _key[0] == bNumComment {
-		return ""
-	}
-
-	if !bytes.Equal(bytes.ToLower(_key), key) {
-		return ""
-	}
-
-	right := bytes.IndexByte(data[index:], bNumComment)
-	if right == -1 {
-		data = data[index+1:]
-	} else if right > 1 {
-		data = data[index+1 : index+right]
-	} else {
-		return ""
-	}
-
-	return string(bytes.TrimSpace(data))
+	return ""
 }
 
 func GetSectionBody(data, section []byte) []byte {

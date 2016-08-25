@@ -155,3 +155,48 @@ func TestGetSectionBody(t *testing.T) {
 		t.Errorf("Unexpected,want nil but got '%s'", body)
 	}
 }
+
+func TestGetString(t *testing.T) {
+	source := []byte(content)
+
+	value := GetString(source, []byte(" key_buffer_size   "), func(s string) bool {
+		if s == "20M" {
+			return true
+		}
+		return false
+	})
+	if value == "" {
+		t.Error("Unexpected")
+	}
+
+	body := GetSectionBody(source, []byte("   myisamchK   "))
+	if len(body) == 0 {
+		t.Error("Unexpected,got nil")
+	} else {
+		t.Logf("%s", body)
+	}
+
+	value = GetString(body, []byte(" soRt_bufFer_size   "), func(s string) bool {
+		if s == "2M" {
+			return true
+		}
+		return false
+	})
+	if value == "" {
+		t.Error("Unexpected")
+	}
+
+	value = GetString(body, []byte(" soRt_bufFer_size   "), func(s string) bool {
+		return false
+	})
+	if value != "" {
+		t.Error("Unexpected")
+	}
+
+	value = GetString(body, []byte(" soRt_bufFer_size   "), func(s string) bool {
+		return true
+	})
+	if value == "" {
+		t.Error("Unexpected")
+	}
+}
