@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"io/ioutil"
 	"net"
@@ -26,30 +25,31 @@ func getDBAddr(file string) (string, error) {
 	)
 
 	body := parser.GetSectionBody(config, section)
-	lines := bytes.Split(body, []byte{'\n'})
 
-	for i := range lines {
-		if addr != "" && port != "" {
-
-			return addr + ":" + port, nil
-		}
-
-		if str := parser.GetValue(lines[i], bind); str != "" {
-			ip := net.ParseIP(str)
-			if ip != nil {
-				addr = str
-				continue
-			}
-		}
-
-		if str := parser.GetValue(lines[i], portBytes); str != "" {
-
-			n, err := strconv.Atoi(str)
-			if err == nil && n > 0 {
-				port = str
-			}
-		}
+	validIP := func(str string) bool {
+		return net.ParseIP(str) != nil
 	}
 
-	return "", errors.New("Not Found Address")
+	if str := parser.GetString(body, bind, validIP); str != "" {
+		addr = str
+	}
+
+	validPort := func(str string) bool {
+		n, err := strconv.Atoi(str)
+		if err == nil && n > 0 {
+			return true
+		}
+
+		return false
+	}
+
+	if str := parser.GetString(body, portBytes, validPort); str != "" {
+		port = str
+	}
+
+	if addr != "" && port != "" {
+		return addr + ":" + port, nil
+	}
+
+	return "", errors.New("not found address in " + file)
 }
