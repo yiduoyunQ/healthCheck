@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"io/ioutil"
 	"net"
 	"strconv"
@@ -22,7 +21,6 @@ func getConfigValue(file string) (string, string, int, error) {
 		domain string
 		addr   string
 		port   int
-		_err   error
 	)
 
 	content, err := ioutil.ReadFile(file)
@@ -32,40 +30,47 @@ func getConfigValue(file string) (string, string, int, error) {
 
 	body := parser.GetSectionBody(content, domainSection)
 
-	lines := bytes.Split(body, []byte{'\n'})
-	for i := range lines {
+	validDomain := func(str string) bool {
+		return str != ""
+	}
 
-		value := parser.GetValue(lines[i], domainKey)
-		if value != "" {
-			domain = value
-			break
-		}
+	value := parser.GetString(body, domainKey, validDomain)
+	if value != "" {
+		domain = value
 	}
 
 	body = parser.GetSectionBody(content, adminSection)
-	lines = bytes.Split(body, []byte{'\n'})
-	for i := range lines {
 
-		value := parser.GetValue(lines[i], addrKey)
-		if value != "" {
-
-			ip, portStr, err := net.SplitHostPort(value)
-			if err != nil {
-				continue
-			}
-
-			n, err := strconv.Atoi(portStr)
-			if err != nil {
-				_err = err
-				continue
-			}
-
-			addr = ip
-			port = n
-			_err = nil
-			break
+	validAddr := func(str string) bool {
+		_, portStr, err := net.SplitHostPort(value)
+		if err != nil {
+			return false
 		}
+
+		n, err := strconv.Atoi(portStr)
+		if err != nil && n > 0 {
+			return false
+		}
+
+		return true
 	}
 
-	return domain, addr, port, _err
+	value = parser.GetString(body, addrKey, validAddr)
+	if value != "" {
+
+		ip, portStr, err := net.SplitHostPort(value)
+		if err != nil {
+			return domain, "", 0, err
+		}
+
+		n, err := strconv.Atoi(portStr)
+		if err != nil {
+			return domain, ip, n, err
+		}
+
+		addr = ip
+		port = n
+	}
+
+	return domain, addr, port, nil
 }
