@@ -32,6 +32,7 @@ var (
 	defaultFile = "/etc/upproxy/upsql-proxy.conf"
 	timeout     = 10 * time.Second
 )
+
 var commands = []cli.Command{
 	// health check
 	{
@@ -76,6 +77,7 @@ var commands = []cli.Command{
 		},
 	},
 }
+
 var flags = []cli.Flag{
 	cli.BoolFlag{
 		Name:  "version, v",
@@ -110,7 +112,7 @@ func check(t time.Duration) error {
 		return err
 	}
 	defer conn.Close()
-	var topology structs.Topology
+
 	err = sendMessage(domain, "get_topology", name, "X", conn)
 	if err != nil {
 		return err
@@ -120,7 +122,11 @@ func check(t time.Duration) error {
 	if err != nil {
 		return err
 	}
-	var tb topologyBody
+
+	var (
+		tb       topologyBody
+		topology structs.Topology
+	)
 	err = json.Unmarshal([]byte(msg.Body), &tb)
 	if err != nil {
 		return err
@@ -134,9 +140,7 @@ func check(t time.Duration) error {
 }
 
 func readMessage(conn net.Conn) (*message, error) {
-	var msg message
-
-	var b = make([]byte, 7)
+	b := make([]byte, 7)
 	n, err := conn.Read(b)
 	if err != nil || n != 7 {
 		return nil, err
@@ -147,8 +151,8 @@ func readMessage(conn net.Conn) (*message, error) {
 	}
 
 	b1 := make([]byte, l)
-	l_start := 0
-	l_end := 0
+	l_start, l_end := 0, 0
+
 	for {
 		b1_tmp := make([]byte, l)
 		l_tmp, err := conn.Read(b1_tmp)
@@ -176,6 +180,7 @@ func readMessage(conn net.Conn) (*message, error) {
 		"head": string(b),
 	}).Debug("Receive Message")
 
+	var msg message
 	err = json.Unmarshal(b1, &msg)
 	if err != nil {
 		log.Error(err)
