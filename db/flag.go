@@ -22,8 +22,8 @@ var (
 
 func init() {
 	flag.StringVar(&fConfigFile, "default-file", "/DBAASDAT/my.cnf", "db config file")
-	flag.StringVar(&fUser, "root-user", "check", "db username")
-	flag.StringVar(&fPassword, "root-password", "123.com", "db user's password")
+	flag.StringVar(&fUser, "user", "check", "db username")
+	flag.StringVar(&fPassword, "password", "123.com", "db user's password")
 	flag.StringVar(&fDBName, "default-db", "dbaas_check", "db name")
 	flag.StringVar(&fTableName, "default-table", "chk", "db tableName")
 	flag.DurationVar(&fTimeout, "time-out", 5, "check timeout,x s")
