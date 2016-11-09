@@ -111,10 +111,10 @@ func dbExec(addr, query string, timeout, rtimeout time.Duration) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	_, err = db.Exec(query)
 
-	db.Close()
 
 	return err
 }
